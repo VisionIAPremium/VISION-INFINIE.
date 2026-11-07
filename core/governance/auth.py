@@ -81,6 +81,8 @@ def verify_token(token: str, secret: bytes, now: int | None = None) -> TokenClai
         actual = _dec(supplied)
     except (ValueError, TypeError) as exc:
         raise AuthenticationError("Invalid bearer token.") from exc
+    if _enc(actual) != supplied:
+        raise AuthenticationError("Invalid bearer token.")
     expected = hmac.new(secret, encoded.encode("ascii"), hashlib.sha256).digest()
     if not hmac.compare_digest(expected, actual):
         raise AuthenticationError("Invalid bearer token.")
