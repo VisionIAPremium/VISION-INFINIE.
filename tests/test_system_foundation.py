@@ -19,7 +19,7 @@ class SystemFoundationTests(unittest.TestCase):
         spec = AgentSpec("knowledge-curator", "Organizes approved knowledge.")
         register_agent(spec)
         self.assertTrue(get_agent("knowledge-curator").requires_human_approval)
-        self.assertEqual(len(list_agents()), 1)
+        self.assertIn(spec, list_agents())
 
     def test_automation_never_executes(self):
         proposal = propose_action("Prepare a draft report")
