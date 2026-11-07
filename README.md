@@ -2,69 +2,68 @@
 
 **Intelligent Systems & AI Automation Platform**
 
-Technical foundation of VISION IA PREMIUM. Operating principles:
+Technical foundation of VISION IA PREMIUM.
 
-> Understand → Decide → Architect → Build → Test → Measure → Improve → Deploy.
+## Current capabilities
 
-## Status
+- **Knowledge:** local JSON knowledge base with deterministic keyword retrieval.
+- **Memory:** persistent SQLite memory store, populated only through explicit application calls.
+- **AI Core:** orchestrates knowledge retrieval, optional memory context, and a provider adapter.
+- **Providers:** offline context-only provider by default; optional OpenAI-compatible HTTP adapter configured through environment variables.
+- **Decision Engine:** explainable rule evaluation.
+- **Agent Registry:** explicit agent definitions.
+- **Automation Gate:** proposals require human approval; this module does not execute external actions.
+- **CLI:** add/search/list knowledge, save memory, and ask the local AI Core.
+- **CI:** GitHub Actions runs unit tests on pushes and pull requests.
 
-The repository now contains an initial executable Python foundation. It is **not yet a complete production AI platform**: there is no LLM provider, hosted database, web interface, authentication, or deployment environment configured.
+## Important capability boundary
 
-- Knowledge engine: local JSON persistence and deterministic keyword search.
-- Decision engine: explainable rule evaluation.
-- Agent registry: explicit agent definitions; human approval required by default.
-- Automation gate: creates and approves/rejects proposals; it does not execute external actions.
-- Tests: unit tests for the foundation.
-- CI: GitHub Actions workflow runs the Python test suite on pushes and pull requests.
+The default provider is **not a generative AI model**. It returns relevant local source excerpts and explicitly reports when no context is found. To use a remote model, configure `VISION_INFINIE_API_KEY`, an API-compatible base URL, and a model in the application integration. No credential is committed to this repository.
 
-## Structure
+## Project structure
 
 ```text
 .
 ├── cli.py
 ├── core/
-│   ├── intelligence/engine.py
-│   ├── decision/engine.py
-│   ├── agents/registry.py
-│   └── automation/approval.py
-├── data/knowledge/knowledge.json
-├── docs/architecture/intelligence.md
+│   ├── ai/              # provider adapters and orchestrator
+│   ├── intelligence/   # knowledge retrieval
+│   ├── memory/         # SQLite memory
+│   ├── decision/
+│   ├── agents/
+│   └── automation/
+├── data/
+├── docs/
 ├── tests/
-└── .github/workflows/python-tests.yml
+└── .github/workflows/
 ```
 
-## Requirements
+## Requirements and local use
 
-- Python 3.10 or newer.
-- No third-party package is required for the current foundation.
-
-## Run locally
-
-Clone the repository, then from its root directory:
+Python 3.10+, standard library only.
 
 ```bash
 python -m unittest discover -s tests -v
-python cli.py list
-python cli.py add --title "VISION IA PREMIUM" --content "Build governed intelligent systems." --tag vision --tag strategy
+python cli.py add --title "Vision" --content "Build governed intelligent systems." --tag strategy
+python cli.py remember "The project follows a modular architecture."
+python cli.py ask "What is the project architecture?"
 python cli.py search "intelligent systems"
 ```
 
-The knowledge store is `data/knowledge/knowledge.json`. Do not commit credentials, passwords, tokens, or sensitive personal information.
+The knowledge base is stored in `data/knowledge/knowledge.json`; local memory is stored in `data/memory/memory.sqlite3`. Do not store secrets or sensitive personal data.
 
-## Safety and governance
+## Governance
 
-- No network calls or model calls are made by the current core.
-- The automation module never performs an external action.
-- Approval status means a proposal is cleared for a separately implemented manual step; it is not execution.
-- Production use requires authentication, authorization, backups, monitoring, threat modelling, and deployment hardening.
+- No remote model request occurs unless the remote provider is explicitly configured and called.
+- API credentials are read from environment variables, never hard-coded.
+- Retrieved context is supplied to the model as context, not trusted as executable instructions.
+- Automation proposals do not trigger external actions.
+- Production deployment still requires authentication, authorization, backup/restore, monitoring, privacy review, rate limits, and security testing.
 
 ## Roadmap
 
-1. Verify the foundation through GitHub Actions.
-2. Add source provenance, update/archive history, and data validation.
-3. Select an AI provider and implement a bounded model adapter.
-4. Add persistent agent orchestration and permission checks.
-5. Add integration adapters with explicit approval gates.
-6. Build the user interface, observability, security, and deployment.
-
-See [Intelligence & Knowledge specification](docs/architecture/intelligence.md).
+1. Complete and verify the local AI Core.
+2. Configure and test a selected model provider.
+3. Add provenance, memory retention controls, and audit logs.
+4. Add bounded agent orchestration.
+5. Build a secure web interface and deployment pipeline.
