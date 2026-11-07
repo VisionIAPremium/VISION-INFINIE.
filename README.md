@@ -79,7 +79,7 @@ The project follows the [Triangle of Authority](docs/governance/triangle-of-auth
 
 ## Central Director
 
-`core/director/director.py` provides the Founder-facing Director service. Founder instructions enter through `receive_founder_instruction()`. The Director assigns tasks to registered agents with `assign_agent_task()`, receives matching reports through `receive_agent_report()`, and prepares Founder briefings through `prepare_founder_briefing()`. Agent reports are not exposed through a direct Founder channel.
+`core/director/director.py` provides the Founder-facing Director service. In this project, the Founder has designated ChatGPT/OpenAI to fulfil the Director role in the working relationship; this repository does not itself authenticate ChatGPT or create a live ChatGPT-to-agent connection. Founder instructions enter through `receive_founder_instruction()`. The Director assigns tasks to registered agents with `assign_agent_task()`, receives matching reports through `receive_agent_report()`, and prepares Founder briefings through `prepare_founder_briefing()`. Agent reports are not exposed through a direct Founder channel.
 
 The current Director is an application module, not an authenticated chat identity or a deployed message bus. Agent task assignment is a local coordination record; it does not launch autonomous agents or external services. Report receipt confirms submission, not correctness. Identity verification, persistent task storage, agent runtimes, and production access controls remain future work.
 
