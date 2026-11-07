@@ -77,6 +77,10 @@ The knowledge base is stored in `data/knowledge/knowledge.json`; local memory in
 
 The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): the Founder communicates with the Director only; Agents report to and receive instructions from the Director only. Agents have no direct communication route to the Founder. The Director handles delegated operations and escalates reserved decisions to the Founder. The application-level routing and approval rules are implemented in `core/governance/authority.py` and tested in `tests/test_authority.py`. These checks do not authenticate identities; production deployment requires a trusted authentication layer.
 
+## Airtable integration
+
+A bounded, read-only Airtable API client is available in `core/integrations/airtable/client.py`. Its configuration and safety limits are documented in [`docs/integrations/airtable.md`](docs/integrations/airtable.md). No Airtable records or schema were modified. Credentials are never stored in the repository.
+
 ## Central Director
 
 `core/director/director.py` provides the Founder-facing Director service. In this project, the Founder has designated ChatGPT/OpenAI to fulfil the Director role in the working relationship; this repository does not itself authenticate ChatGPT or create a live ChatGPT-to-agent connection. Founder instructions enter through `receive_founder_instruction()`. The Director assigns tasks to registered agents with `assign_agent_task()`, receives matching reports through `receive_agent_report()`, and prepares Founder briefings through `prepare_founder_briefing()`. Agent reports are not exposed through a direct Founder channel.
