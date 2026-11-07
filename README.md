@@ -103,3 +103,14 @@ The current Director is an application module, not an authenticated chat identit
 3. Add source provenance, memory retention controls, and audit review tools.
 4. Add bounded agent orchestration and integration adapters.
 5. Build a secure web interface and deployment pipeline.
+
+
+## Operational system audit
+
+Run a read-only operational audit locally:
+
+```bash
+python cli.py audit
+```
+
+The audit checks project structure, knowledge-store integrity, core imports, provider configuration, memory availability, audit-log integrity, and Airtable connection state. It performs no network calls and never prints credential values. A passing audit is not a production-security certification; see [operational audit boundaries](docs/governance/operational-audit.md).
