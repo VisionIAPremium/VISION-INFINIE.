@@ -9,6 +9,7 @@ Technical foundation of VISION IA PREMIUM.
 - **Knowledge:** local JSON knowledge base with deterministic keyword retrieval.
 - **Memory:** persistent SQLite memory store, populated only through explicit application calls.
 - **AI Core:** orchestrates knowledge retrieval, optional memory context, and a model-provider adapter.
+- **Central Director:** receives Founder instructions, assigns work to registered agents, receives their reports, and prepares consolidated Founder briefings.
 - **Providers:** offline context-only provider by default; optional OpenAI-compatible HTTP adapter configured through environment variables.
 - **Decision Engine:** explainable rule evaluation.
 - **Agent Registry:** explicit agent definitions.
@@ -75,6 +76,12 @@ The knowledge base is stored in `data/knowledge/knowledge.json`; local memory in
 ## Governance authority
 
 The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): the Founder communicates with the Director only; Agents report to and receive instructions from the Director only. Agents have no direct communication route to the Founder. The Director handles delegated operations and escalates reserved decisions to the Founder. The application-level routing and approval rules are implemented in `core/governance/authority.py` and tested in `tests/test_authority.py`. These checks do not authenticate identities; production deployment requires a trusted authentication layer.
+
+## Central Director
+
+`core/director/director.py` provides the Founder-facing Director service. Founder instructions enter through `receive_founder_instruction()`. The Director assigns tasks to registered agents with `assign_agent_task()`, receives matching reports through `receive_agent_report()`, and prepares Founder briefings through `prepare_founder_briefing()`. Agent reports are not exposed through a direct Founder channel.
+
+The current Director is an application module, not an authenticated chat identity or a deployed message bus. Agent task assignment is a local coordination record; it does not launch autonomous agents or external services. Report receipt confirms submission, not correctness. Identity verification, persistent task storage, agent runtimes, and production access controls remain future work.
 
 ## Governance and production limits
 
