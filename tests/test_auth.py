@@ -1,8 +1,15 @@
 import unittest
-from core.governance.auth import AuthenticationError, authenticate_header, issue_token, verify_token
+
+from core.governance.auth import (
+    AuthenticationError,
+    authenticate_header,
+    issue_token,
+    verify_token,
+)
 from core.governance.authority import Role
 
 SECRET = b"test-secret-with-at-least-32-bytes-long"
+
 
 class AuthenticationTests(unittest.TestCase):
     def test_issues_and_verifies_founder_token(self):
@@ -23,6 +30,15 @@ class AuthenticationTests(unittest.TestCase):
         with self.assertRaises(AuthenticationError):
             verify_token(altered, SECRET)
 
+    def test_non_base64_signature_is_rejected(self):
+        token = issue_token("founder-test", Role.FOUNDER, SECRET, 600)
+        with self.assertRaises(AuthenticationError):
+            verify_token(token + "!", SECRET)
+
+    def test_non_ascii_token_is_rejected_cleanly(self):
+        with self.assertRaises(AuthenticationError):
+            verify_token("é.invalid", SECRET)
+
     def test_expired_token_is_rejected(self):
         token = issue_token("founder-test", Role.FOUNDER, SECRET, 60)
         claims = verify_token(token, SECRET)
@@ -34,6 +50,7 @@ class AuthenticationTests(unittest.TestCase):
             issue_token("founder-test", Role.FOUNDER, b"short", 600)
         with self.assertRaises(ValueError):
             issue_token("founder-test", Role.FOUNDER, SECRET, 10)
+
 
 if __name__ == "__main__":
     unittest.main()
