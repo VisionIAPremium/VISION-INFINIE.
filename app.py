@@ -1,16 +1,16 @@
-"""Local-only HTTP API for the VISION INFINIE AI Core.
-
-By default this server binds to 127.0.0.1 and is not intended for public hosting.
-"""
+"""Authenticated HTTP API. Use a TLS reverse proxy for internet deployment."""
 from __future__ import annotations
-
-import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
+import json, os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from core.ai.orchestrator import AICore
-from core.memory.store import MemoryStore
 from core.governance.audit import record_event
+from core.governance.auth import AuthenticationError, authenticate_header, get_token_secret
+from core.governance.authority import Role
+from core.memory.store import MemoryStore
 
+class VisionHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
 
 class VisionHandler(BaseHTTPRequestHandler):
     core = AICore(memory=MemoryStore())
@@ -21,6 +21,9 @@ class VisionHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.end_headers()
         self.wfile.write(body)
 
@@ -35,32 +38,46 @@ class VisionHandler(BaseHTTPRequestHandler):
             self._send(404, {"error": "Not found"})
             return
         try:
+            claims = authenticate_header(self.headers.get("Authorization"), get_token_secret())
+        except (AuthenticationError, RuntimeError):
+            self._send(401, {"error": "Unauthorized"})
+            return
+        if claims.role not in (Role.FOUNDER, Role.DIRECTOR):
+            self._send(403, {"error": "Forbidden"})
+            return
+        try:
             length = int(self.headers.get("Content-Length", "0"))
-            if length < 1 or length > 16_384:
+            if length < 1 or length > 16384:
                 self._send(413, {"error": "Request body must be between 1 and 16384 bytes"})
                 return
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("JSON body must be an object.")
             question = payload.get("question", "")
+            if not isinstance(question, str) or not question.strip():
+                raise ValueError("Question must be a non-empty string.")
             result = self.core.ask(question)
-            record_event("ai_core.ask", "Local question processed")
+            record_event("ai_core.ask", f"Authenticated request by {claims.subject} ({claims.role.value}).")
             self._send(200, result)
-        except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, ValueError) as exc:
-            self._send(400, {"error": str(exc)})
+        except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, ValueError):
+            self._send(400, {"error": "Invalid request."})
 
     def log_message(self, format, *args):
         return
 
-
 def main():
-    server = HTTPServer(("127.0.0.1", 8765), VisionHandler)
-    print("VISION INFINIE API available at http://127.0.0.1:8765")
+    host = os.getenv("VISION_INFINIE_HOST", "127.0.0.1")
+    port = int(os.getenv("VISION_INFINIE_PORT", "8765"))
+    if host not in ("127.0.0.1", "localhost", "0.0.0.0"):
+        raise RuntimeError("VISION_INFINIE_HOST must be localhost or 0.0.0.0.")
+    server = VisionHTTPServer((host, port), VisionHandler)
+    print(f"VISION INFINIE API listening on {host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
-
 
 if __name__ == "__main__":
     main()

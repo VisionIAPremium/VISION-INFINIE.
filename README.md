@@ -1,67 +1,34 @@
 # VISION INFINIE
 
-**Intelligent Systems & AI Automation Platform**
-
+**Intelligent Systems & AI Automation Platform**  
 Technical foundation of VISION IA PREMIUM.
 
-## Current capabilities
+## Platform capabilities
 
-- **Knowledge:** local JSON knowledge base with deterministic keyword retrieval.
-- **Memory:** persistent SQLite memory store, populated only through explicit application calls.
-- **AI Core:** orchestrates knowledge retrieval, optional memory context, and a model-provider adapter.
-- **Central Director:** receives Founder instructions, assigns work to registered agents, receives their reports, and prepares consolidated Founder briefings.
-- **Providers:** offline context-only provider by default; optional OpenAI-compatible HTTP adapter configured through environment variables.
-- **Decision Engine:** explainable rule evaluation.
-- **Agent Registry:** explicit agent definitions.
-- **Automation Gate:** proposals require human approval; this module does not execute external actions.
-- **Governance:** append-only local JSONL audit events.
-- **Local API:** HTTP health and question endpoints bound to 127.0.0.1 only.
-- **CLI and CI:** local commands plus GitHub Actions unit tests.
+- Local knowledge retrieval and persistent SQLite memory.
+- AI provider adapter: offline/context-only by default; optional OpenAI-compatible provider.
+- Central Director service and seven pre-registered specialist VIP role definitions.
+- Human approval gate for proposed external actions.
+- HMAC-SHA256 bearer-token authentication for the HTTP API.
+- Role-based API access: Founder and Director can use `POST /ask`; Agent tokens are denied.
+- Docker deployment foundation with non-root runtime, read-only container filesystem, persistent data volume, and localhost-only host binding.
+- Read-only operational audit and GitHub Actions tests.
 
-## Capability boundary
+## Important capability boundaries
 
-The default provider is **not a generative AI model**. It returns relevant local source excerpts and reports when no context is found. A remote model adapter exists but must be explicitly configured with an API-compatible endpoint, model, and `VISION_INFINIE_API_KEY`. No credential is committed.
+The local provider is not a generative model. It returns retrieved source context. The remote model adapter is optional and requires explicit provider configuration and a live test.
 
-## Configure a model provider
+The VIP registry contains bounded role definitions, not autonomous workers. The Director is an application service, not a live ChatGPT connector or message bus. The HMAC service tokens are not a full OAuth/OIDC identity provider: no MFA, user directory, or individual token revocation is provided.
 
-The default provider remains offline. To select the optional OpenAI-compatible adapter, set these environment variables in the runtime environment:
-
-    VISION_INFINIE_PROVIDER=openai-compatible
-    VISION_INFINIE_BASE_URL=https://api.example.com/v1
-    VISION_INFINIE_MODEL=your-model-name
-    VISION_INFINIE_API_KEY=your-secret-key
-
-Use the exact endpoint and model identifier supplied by your provider. Never commit the API key or paste it into chat. Set `VISION_INFINIE_PROVIDER=local` to use the offline provider. The application selects the provider through `core/ai/config.py`.
-
-Automated provider tests mock the HTTP response; they validate request construction, response parsing, configuration, and missing-key handling without making a paid external API call. A live provider test still requires valid provider credentials and is not claimed by CI.
-
-See `docs/ai/provider-configuration.md` for details.
-## Structure
-
-```text
-.
-├── app.py
-├── cli.py
-├── core/
-│   ├── ai/              # provider adapters and orchestrator
-│   ├── intelligence/   # knowledge retrieval
-│   ├── memory/         # SQLite memory
-│   ├── decision/
-│   ├── agents/
-│   ├── automation/
-│   └── governance/     # audit log
-├── data/
-├── docs/
-├── tests/
-└── .github/workflows/
-```
+The included Compose file is intentionally bound to `127.0.0.1`. Public hosting requires a TLS reverse proxy, managed secrets, firewall/DNS configuration, monitoring, backups, rate limiting, identity management, and security review. Do not expose the application port directly to the internet.
 
 ## Run locally
 
-Requires Python 3.10+; current foundation uses only the standard library.
+Requires Python 3.10+; the application currently uses only the Python standard library.
 
 ```bash
 python -m unittest discover -s tests -v
+python cli.py audit
 python cli.py add --title "Vision" --content "Build governed intelligent systems." --tag strategy
 python cli.py remember "The project follows a modular architecture."
 python cli.py ask "What is the project architecture?"
@@ -69,48 +36,54 @@ python cli.py search "intelligent systems"
 python app.py
 ```
 
-The local API listens at `http://127.0.0.1:8765`. Check it with `GET /health`; ask a question with `POST /ask` and JSON body `{"question":"What is VISION INFINIE?"}`. It is intentionally bound to localhost and must not be exposed publicly as-is.
+For the local API, configure a unique signing secret of at least 32 characters in `VISION_INFINIE_TOKEN_SECRET`. Issue a short-lived Founder token:
 
-The knowledge base is stored in `data/knowledge/knowledge.json`; local memory in `data/memory/memory.sqlite3`; audit events in `data/audit/events.jsonl`. Do not store secrets or sensitive personal data.
+```bash
+VISION_INFINIE_TOKEN_SECRET='YOUR_SECRET' python cli.py issue-token --subject founder-console --role founder --ttl 3600
+```
 
-## Governance authority
+Then call the authenticated endpoint:
 
-The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): the Founder communicates with the Director only; Agents report to and receive instructions from the Director only. Agents have no direct communication route to the Founder. The Director handles delegated operations and escalates reserved decisions to the Founder. The application-level routing and approval rules are implemented in `core/governance/authority.py` and tested in `tests/test_authority.py`. These checks do not authenticate identities; production deployment requires a trusted authentication layer.
+```bash
+curl -X POST http://127.0.0.1:8765/ask \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What is VISION INFINIE?"}'
+```
 
-## Airtable integration
+Health check: `GET http://127.0.0.1:8765/health`.
 
-A bounded, read-only Airtable API client is available in `core/integrations/airtable/client.py`. Its configuration and safety limits are documented in [`docs/integrations/airtable.md`](docs/integrations/airtable.md). No Airtable records or schema were modified. Credentials are never stored in the repository.
+## Container deployment
 
-## Central Director
+Copy `.env.example` to `.env`, set a unique `VISION_INFINIE_TOKEN_SECRET`, then run:
 
-`core/director/director.py` provides the Founder-facing Director service. In this project, the Founder has designated ChatGPT/OpenAI to fulfil the Director role in the working relationship; this repository does not itself authenticate ChatGPT or create a live ChatGPT-to-agent connection. Founder instructions enter through `receive_founder_instruction()`. The Director assigns tasks to registered agents with `assign_agent_task()`, receives matching reports through `receive_agent_report()`, and prepares Founder briefings through `prepare_founder_briefing()`. Agent reports are not exposed through a direct Founder channel.
+```bash
+docker compose up --build -d
+docker compose logs --tail=100 vision-infinie
+```
 
-The current Director is an application module, not an authenticated chat identity or a deployed message bus. Agent task assignment is a local coordination record; it does not launch autonomous agents or external services. Report receipt confirms submission, not correctness. Identity verification, persistent task storage, agent runtimes, and production access controls remain future work.
+Detailed instructions and production acceptance gates: [External platform deployment](docs/deployment/external-platform.md).
 
-## Governance and production limits
+## Governance
 
-- No remote model request occurs unless a remote provider is explicitly configured and invoked.
-- API credentials are read from environment variables, never hard-coded.
-- Retrieved context is data, not executable instructions.
-- Automation proposals do not trigger external actions.
-- The local API has no user authentication and must remain on localhost.
-- Production deployment still requires authentication, authorization, backup/restore, monitoring, privacy review, rate limits, security testing, and infrastructure configuration.
+The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): Founder → Director → Agents. The policy module in `core/governance/authority.py` evaluates application-level roles; token verification is implemented separately in `core/governance/auth.py`.
 
-## Roadmap
+Airtable remains an optional bounded read-only adapter. No Airtable records, schema, or external services are modified by the application deployment template.
 
-1. Validate the local AI Core and API through CI.
-2. Configure and test a selected model provider.
-3. Add source provenance, memory retention controls, and audit review tools.
-4. Add bounded agent orchestration and integration adapters.
-5. Build a secure web interface and deployment pipeline.
+## Data locations
 
+- Knowledge: `data/knowledge/knowledge.json`
+- Memory: `data/memory/memory.sqlite3`
+- Audit events: `data/audit/events.jsonl`
 
-## Operational system audit
+Do not store credentials or sensitive personal data in the repository, knowledge base, or logs.
 
-Run a read-only operational audit locally:
+## Operational audit
+
+Run:
 
 ```bash
 python cli.py audit
 ```
 
-The audit checks project structure, knowledge-store integrity, core imports, provider configuration, memory availability, audit-log integrity, and Airtable connection state. It performs no network calls and never prints credential values. A passing audit is not a production-security certification; see [operational audit boundaries](docs/governance/operational-audit.md).
+The audit checks project files, knowledge JSON, core imports, provider configuration, API signing-secret presence, VIP registry population, memory availability, audit-log structure, and Airtable configuration presence. It makes no network requests and does not print credential values. A passing audit is not a production security certification.

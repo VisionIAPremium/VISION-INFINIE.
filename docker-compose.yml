@@ -1,0 +1,25 @@
+services:
+  vision-infinie:
+    build: .
+    image: vision-infinie:local
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      VISION_INFINIE_HOST: 0.0.0.0
+      VISION_INFINIE_PORT: 8765
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - vision_data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    init: true
+
+volumes:
+  vision_data:

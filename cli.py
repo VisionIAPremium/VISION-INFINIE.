@@ -1,12 +1,11 @@
 """Command-line interface for VISION INFINIE."""
 import argparse
 import json
-
 from core.intelligence.engine import add_entry, list_entries, search_entries
 from core.ai.orchestrator import AICore
 from core.memory.store import MemoryStore
 from core.governance.system_audit import run_audit
-
+from core.governance.auth import get_token_secret, issue_token
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="vision-infinie", description="Local tools for VISION INFINIE.")
@@ -20,6 +19,10 @@ def main() -> int:
     search.add_argument("--limit", type=int, default=10)
     commands.add_parser("list", help="List knowledge entries")
     commands.add_parser("audit", help="Run a read-only operational system audit")
+    token = commands.add_parser("issue-token", help="Issue a short-lived API bearer token")
+    token.add_argument("--subject", required=True)
+    token.add_argument("--role", required=True, choices=("founder", "director", "agent"))
+    token.add_argument("--ttl", type=int, default=3600, help="Lifetime in seconds (60 to 86400)")
     ask = commands.add_parser("ask", help="Ask the local AI Core")
     ask.add_argument("question")
     remember = commands.add_parser("remember", help="Save an authorized local memory")
@@ -29,6 +32,9 @@ def main() -> int:
         report = run_audit()
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 1 if report["summary"]["FAIL"] else 0
+    if args.command == "issue-token":
+        print(issue_token(args.subject, args.role, get_token_secret(), args.ttl))
+        return 0
     if args.command == "add":
         entry = add_entry(args.title, args.content, args.tag)
         print(f"Added {entry['id']}: {entry['title']}")
@@ -46,7 +52,6 @@ def main() -> int:
         print(result["answer"])
         print(f"\\n[provider={result['provider']}; knowledge={result['knowledge_hits']}; memory={result['memory_hits']}]")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
