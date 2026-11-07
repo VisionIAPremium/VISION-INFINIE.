@@ -108,3 +108,19 @@ This grants the workflow read access to repository contents for its job; it does
 **The Founder authorizes. The Director governs. The Agents execute within delegated limits.**
 
 No lower level may claim, assume, or create the authority of a higher level.
+
+
+## 7. Single communication gateway
+
+The Founder communicates with the Director only. The Director is the single management gateway between the Founder and the Agent workforce.
+
+- Agents may send operational requests, status, and results to the Director.
+- The Director assigns work to Agents and receives their reports.
+- Agents must not address, message, notify, or request operational approval directly from the Founder.
+- The Director handles routine work within delegated authority and escalates reserved decisions to the Founder.
+- The Director is responsible for consolidating Agent outputs before reporting to the Founder.
+- An Agent that cannot proceed must stop and report the blocker to the Director; it must not bypass the chain.
+
+The application-level routing policy is implemented in `core/governance/authority.py`. The policy tests are in `tests/test_authority.py`.
+
+**Enforcement limitation:** the current module evaluates declared roles and approval flags; it does not authenticate identities, provide a messaging gateway, or intercept every external integration. Until those controls are connected to trusted authentication and all communication adapters, this is an application policy check—not a complete security boundary.
