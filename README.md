@@ -21,6 +21,20 @@ Technical foundation of VISION IA PREMIUM.
 
 The default provider is **not a generative AI model**. It returns relevant local source excerpts and reports when no context is found. A remote model adapter exists but must be explicitly configured with an API-compatible endpoint, model, and `VISION_INFINIE_API_KEY`. No credential is committed.
 
+## Configure a model provider
+
+The default provider remains offline. To select the optional OpenAI-compatible adapter, set these environment variables in the runtime environment:
+
+    VISION_INFINIE_PROVIDER=openai-compatible
+    VISION_INFINIE_BASE_URL=https://api.example.com/v1
+    VISION_INFINIE_MODEL=your-model-name
+    VISION_INFINIE_API_KEY=your-secret-key
+
+Use the exact endpoint and model identifier supplied by your provider. Never commit the API key or paste it into chat. Set `VISION_INFINIE_PROVIDER=local` to use the offline provider. The application selects the provider through `core/ai/config.py`.
+
+Automated provider tests mock the HTTP response; they validate request construction, response parsing, configuration, and missing-key handling without making a paid external API call. A live provider test still requires valid provider credentials and is not claimed by CI.
+
+See `docs/ai/provider-configuration.md` for details.
 ## Structure
 
 ```text
