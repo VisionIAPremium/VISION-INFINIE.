@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from core.intelligence.engine import search_entries
-from core.ai.provider import LocalContextProvider, ModelProvider
+from core.ai.config import build_provider
+from core.ai.provider import ModelProvider
 from core.memory.store import MemoryStore
 
 
 class AICore:
     def __init__(self, provider: ModelProvider | None = None, memory: MemoryStore | None = None):
-        self.provider = provider or LocalContextProvider()
+        self.provider = provider if provider is not None else build_provider()
         self.memory = memory
 
     def ask(self, question: str, knowledge_limit: int = 5, memory_limit: int = 3) -> dict:
