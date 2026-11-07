@@ -74,7 +74,7 @@ The knowledge base is stored in `data/knowledge/knowledge.json`; local memory in
 
 ## Governance authority
 
-The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): Founder → Director → Agents / Modules. Access is denied by default; approvals must follow the authority chain and be scoped. See the policy for protected-data rules and GitHub/CI limitations.
+The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): the Founder communicates with the Director only; Agents report to and receive instructions from the Director only. Agents have no direct communication route to the Founder. The Director handles delegated operations and escalates reserved decisions to the Founder. The application-level routing and approval rules are implemented in `core/governance/authority.py` and tested in `tests/test_authority.py`. These checks do not authenticate identities; production deployment requires a trusted authentication layer.
 
 ## Governance and production limits
 
