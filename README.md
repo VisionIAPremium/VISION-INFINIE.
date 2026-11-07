@@ -72,6 +72,10 @@ The local API listens at `http://127.0.0.1:8765`. Check it with `GET /health`; a
 
 The knowledge base is stored in `data/knowledge/knowledge.json`; local memory in `data/memory/memory.sqlite3`; audit events in `data/audit/events.jsonl`. Do not store secrets or sensitive personal data.
 
+## Governance authority
+
+The project follows the [Triangle of Authority](docs/governance/triangle-of-authority.md): Founder → Director → Agents / Modules. Access is denied by default; approvals must follow the authority chain and be scoped. See the policy for protected-data rules and GitHub/CI limitations.
+
 ## Governance and production limits
 
 - No remote model request occurs unless a remote provider is explicitly configured and invoked.
