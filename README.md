@@ -2,73 +2,69 @@
 
 **Intelligent Systems & AI Automation Platform**
 
-VISION INFINIE is the technical foundation for building useful, governed, testable intelligent systems. It follows the VISION IA PREMIUM principles:
+Technical foundation of VISION IA PREMIUM. Operating principles:
 
 > Understand → Decide → Architect → Build → Test → Measure → Improve → Deploy.
 
-## Current status
+## Status
 
-- Phase 1 — repository audit: completed.
-- Phase 2 — Intelligence & Knowledge foundation: initial implementation.
-- Current runtime: Python 3.10+; standard library only.
-- No external AI provider or API key is required for the initial knowledge engine.
+The repository now contains an initial executable Python foundation. It is **not yet a complete production AI platform**: there is no LLM provider, hosted database, web interface, authentication, or deployment environment configured.
 
-## Architecture
+- Knowledge engine: local JSON persistence and deterministic keyword search.
+- Decision engine: explainable rule evaluation.
+- Agent registry: explicit agent definitions; human approval required by default.
+- Automation gate: creates and approves/rejects proposals; it does not execute external actions.
+- Tests: unit tests for the foundation.
+- CI: GitHub Actions workflow runs the Python test suite on pushes and pull requests.
+
+## Structure
 
 ```text
-VISION-INFINIE/
+.
+├── cli.py
 ├── core/
-│   └── intelligence/
-│       └── engine.py       # Local knowledge storage and keyword retrieval
-├── data/
-│   └── knowledge/
-│       └── knowledge.json  # Knowledge entries (JSON)
-├── docs/
-│   └── architecture/
-│       └── intelligence.md # Module specification and roadmap
+│   ├── intelligence/engine.py
+│   ├── decision/engine.py
+│   ├── agents/registry.py
+│   └── automation/approval.py
+├── data/knowledge/knowledge.json
+├── docs/architecture/intelligence.md
 ├── tests/
-│   └── test_intelligence.py
-└── README.md
+└── .github/workflows/python-tests.yml
 ```
 
-## Quick start
+## Requirements
 
-Run the test suite:
+- Python 3.10 or newer.
+- No third-party package is required for the current foundation.
+
+## Run locally
+
+Clone the repository, then from its root directory:
 
 ```bash
 python -m unittest discover -s tests -v
+python cli.py list
+python cli.py add --title "VISION IA PREMIUM" --content "Build governed intelligent systems." --tag vision --tag strategy
+python cli.py search "intelligent systems"
 ```
 
-Add and search knowledge from Python:
+The knowledge store is `data/knowledge/knowledge.json`. Do not commit credentials, passwords, tokens, or sensitive personal information.
 
-```python
-from core.intelligence.engine import add_entry, search_entries
+## Safety and governance
 
-add_entry(
-    title="VISION IA PREMIUM",
-    content="Build reliable intelligent systems through a governed, iterative method.",
-    tags=["vision", "strategy"],
-)
-results = search_entries("intelligent systems")
-print(results)
-```
-
-The engine stores entries in `data/knowledge/knowledge.json`. Keep credentials, personal secrets, and sensitive personal data out of this repository.
-
-## Design principles
-
-1. **Traceability:** knowledge entries have stable IDs and timestamps.
-2. **Local-first:** the first version works without external services.
-3. **Safety:** no autonomous external actions are performed.
-4. **Testability:** core behavior is covered by automated tests.
-5. **Extensibility:** future model and agent integrations must sit behind explicit interfaces.
+- No network calls or model calls are made by the current core.
+- The automation module never performs an external action.
+- Approval status means a proposal is cleared for a separately implemented manual step; it is not execution.
+- Production use requires authentication, authorization, backups, monitoring, threat modelling, and deployment hardening.
 
 ## Roadmap
 
-1. Intelligence & knowledge foundation.
-2. Decision engine with explainable rules.
-3. Agent orchestration with permission boundaries.
-4. Automation adapters and human approval gates.
-5. User interface, observability, and deployment.
+1. Verify the foundation through GitHub Actions.
+2. Add source provenance, update/archive history, and data validation.
+3. Select an AI provider and implement a bounded model adapter.
+4. Add persistent agent orchestration and permission checks.
+5. Add integration adapters with explicit approval gates.
+6. Build the user interface, observability, security, and deployment.
 
-See [Intelligence & Knowledge architecture](docs/architecture/intelligence.md).
+See [Intelligence & Knowledge specification](docs/architecture/intelligence.md).
