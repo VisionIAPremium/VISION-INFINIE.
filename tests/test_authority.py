@@ -24,6 +24,17 @@ class AuthorityTests(unittest.TestCase):
         self.assertEqual(result.decision, Decision.DENY)
         self.assertEqual(result.approver, Role.DIRECTOR)
 
+    def test_agent_reserved_action_is_escalated_after_director_review(self):
+        result = authorize_action(
+            Role.AGENT, "connect_external_service", director_approved=True
+        )
+        self.assertEqual(result.decision, Decision.REQUIRE_FOUNDER)
+        approved = authorize_action(
+            Role.AGENT, "connect_external_service",
+            director_approved=True, founder_approved=True
+        )
+        self.assertEqual(approved.decision, Decision.ALLOW)
+
     def test_director_can_approve_delegated_actions(self):
         result = authorize_action(Role.DIRECTOR, "run_local_tests")
         self.assertEqual(result.decision, Decision.ALLOW)
