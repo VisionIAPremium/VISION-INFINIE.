@@ -67,8 +67,14 @@ def authorize_action(
         if not director_approved:
             return AuthorizationResult(Decision.DENY, Role.DIRECTOR,
                                        "Agent must request the Director first.")
-        return AuthorizationResult(Decision.ALLOW, Role.DIRECTOR,
-                                   "Director approved the Agent action.")
+        if action in DIRECTOR_DELEGATED_ACTIONS:
+            return AuthorizationResult(Decision.ALLOW, Role.DIRECTOR,
+                                       "Director approved a delegated Agent action.")
+        if founder_approved:
+            return AuthorizationResult(Decision.ALLOW, Role.FOUNDER,
+                                       "Founder approved the reserved Agent action.")
+        return AuthorizationResult(Decision.REQUIRE_FOUNDER, Role.FOUNDER,
+                                   "Director must escalate this reserved action.")
 
     if requester == Role.DIRECTOR:
         if action in DIRECTOR_DELEGATED_ACTIONS:
